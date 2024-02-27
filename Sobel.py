@@ -59,7 +59,7 @@ def sobel_operation(gray_image, h_filter, v_filter):
 
 if __name__ == "__main__":
     # Read RGB image file
-    rgb_image = readImage('../data/image2.jpg')
+    rgb_image = readImage('./data/image2.jpg')
     # convert RGB image to gray scale
     gray_image = cv2.cvtColor(rgb_image, cv2.COLOR_BGR2GRAY)
 
