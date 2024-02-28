@@ -24,37 +24,29 @@ cv2.imwrite('3_gaussian_blur.jpg', gray)
 edges_img = cv2.Canny(gray, 50, 150, apertureSize=3)
 cv2.imwrite('4_edges_detected.jpg', edges_img)
 
+# Detect lines using Hough Transform
 lines = cv2.HoughLinesP(edges_img, 1, np.pi / 180, threshold=20, minLineLength=30, maxLineGap=10)
 
-# Define a function to calculate the angle of a line segment
 def line_angle(line):
     x1, y1, x2, y2 = line[0]
-    return np.arctan2(y2 - y1, x2 - x1) * 180.0 / np.pi
+    angle = np.arctan2(y2 - y1, x2 - x1) * 180 / np.pi
+    return angle
+# Calculate the angle of each line segment
+angles = np.array([line_angle(line) for line in lines])
 
-# Cluster lines based on the angle
-if lines is not None:
-    angles = np.array([line_angle(line) for line in lines]).reshape(-1, 1)
-    # Hierarchical clustering
-    clustering = AgglomerativeClustering(n_clusters=2)
-    print("here")
-    labels = clustering.fit_predict(angles)
+# Normalize angles to [0, 180) degrees to treat opposite directions the same
+normalized_angles = np.abs(angles) % 180
 
-    colors = [(0, 0, 255), (255, 0, 0)]  # Red and Blue
+# Cluster based on normalized angles
+clustering = AgglomerativeClustering(n_clusters=3)  # Assuming 3 main directions: width, height, depth
+labels = clustering.fit_predict(normalized_angles.reshape(-1, 1))
 
-    # Draw lines on the image with color based on their cluster
-    for line, label in zip(lines, labels):
-        x1, y1, x2, y2 = line[0]
-        color = colors[label % len(colors)]  # Choose color based on label
+# Map labels to colors (fixed colors for clarity)
+colors = [(0, 0, 255), (255, 0, 0), (0, 255, 0)]  # Red, Blue, Green for width, height, depth
 
-        cv2.line(original_img, (x1, y1), (x2, y2), color, 2)
+# Draw lines on the image with colors based on their cluster
+for line, label in zip(lines, labels):
+    x1, y1, x2, y2 = line[0]
+    cv2.line(original_img, (x1, y1), (x2, y2), colors[label], 2)
 
-cv2.imwrite('6_lines_clustered.jpg', original_img)
-
-# Step 5: Use Hough Transform to detect lines
-lines = cv2.HoughLinesP(edges_img, 1, np.pi / 180, threshold=20, minLineLength=30, maxLineGap=10)
-
-# Step 6: Draw lines on the original image
-if lines is not None:
-    for line in lines:
-        x1, y1, x2, y2 = line[0]
-        cv2.line(original_img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+cv2.imwrite('6_lines_first_clustered.jpg', original_img)
